@@ -119,6 +119,42 @@ paths:
                 type: string
                 format: binary
 
+  /api/v1/documents/export-zip:
+    get:
+      tags:
+        - Documents
+      summary: Export search results as a ZIP file
+      description: Generates and downloads a ZIP archive containing all document binaries that match the provided search criteria.
+      parameters:
+        - name: name
+          in: query
+          description: Partial or full name of the document file.
+          required: false
+          schema:
+            type: string
+        - name: type
+          in: query
+          description: File extension type (e.g., pdf, docx, xlsx).
+          required: false
+          schema:
+            type: string
+        - name: author
+          in: query
+          description: Partial or full name of the author.
+          required: false
+          schema:
+            type: string
+      responses:
+        '200':
+          description: A generated ZIP file containing the requested documents.
+          content:
+            application/zip:
+              schema:
+                type: string
+                format: binary
+        '500':
+          description: Internal server error during ZIP generation.
+
 components:
   schemas:
     DocumentDTO:

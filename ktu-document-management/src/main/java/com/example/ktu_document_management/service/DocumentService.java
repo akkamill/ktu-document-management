@@ -18,4 +18,6 @@ public interface DocumentService {
   DocumentEntity getDocumentById(String id);
 
   byte[] generateExcelReport() throws IOException;
+
+  byte[] exportDocumentsAsZip(String name, String type, String author) throws IOException;
 }

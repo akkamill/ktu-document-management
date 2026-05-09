@@ -2,12 +2,12 @@ version: '3.8'
 
 services:
   db:
-    image: postgres:15
+    image: postgres:17-alpine
     container_name: dms-postgres
     environment:
       POSTGRES_DB: dms_db
       POSTGRES_USER: postgres
-      POSTGRES_PASSWORD: your_password
+      POSTGRES_PASSWORD: dms123
     ports:
       - "5432:5432"
     volumes:
@@ -22,7 +22,7 @@ services:
     environment:
       - SPRING_DATASOURCE_URL=jdbc:postgresql://db:5432/dms_db
       - SPRING_DATASOURCE_USERNAME=postgres
-      - SPRING_DATASOURCE_PASSWORD=password
+      - SPRING_DATASOURCE_PASSWORD=dms123
     depends_on:
       - db
     volumes:

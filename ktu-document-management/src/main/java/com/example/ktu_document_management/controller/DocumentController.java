@@ -61,4 +61,18 @@ public class DocumentController {
         .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=\"document_report.xlsx\"")
         .body(excelData);
   }
+
+  @GetMapping("/export-zip")
+  public ResponseEntity<byte[]> exportDocumentsAsZip(
+      @RequestParam(required = false) String name,
+      @RequestParam(required = false) String type,
+      @RequestParam(required = false) String author) throws IOException {
+
+    byte[] zipData = documentService.exportDocumentsAsZip(name, type, author);
+
+    return ResponseEntity.ok()
+        .contentType(MediaType.parseMediaType("application/zip"))
+        .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=\"document_export.zip\"")
+        .body(zipData);
+  }
 }

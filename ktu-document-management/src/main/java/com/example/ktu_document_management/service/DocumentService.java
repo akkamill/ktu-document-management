@@ -1,6 +1,7 @@
 package com.example.ktu_document_management.service;
 
 import com.example.ktu_document_management.dto.DocumentDTO;
+import com.example.ktu_document_management.dto.FileResponseDTO;
 import com.example.ktu_document_management.entitiy.DocumentEntity;
 import org.springframework.stereotype.Repository;
 import org.springframework.web.multipart.MultipartFile;
@@ -19,5 +20,7 @@ public interface DocumentService {
 
   byte[] generateExcelReport() throws IOException;
 
-  byte[] exportDocumentsAsZip(String name, String type, String author) throws IOException;
+  FileResponseDTO downloadDocument(String id);
+
+  FileResponseDTO exportDocumentsAsZip(String name, String type, String author) throws IOException;
 }

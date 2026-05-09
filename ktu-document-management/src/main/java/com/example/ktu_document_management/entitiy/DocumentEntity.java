@@ -26,6 +26,6 @@ public class DocumentEntity {
   @Column(name = "upload_date")
   private LocalDateTime uploadDate;
 
-  @Column(name = "file_hash", unique = true)
+  @Column(name = "file_hash", unique = true, columnDefinition = "TEXT")
   private String fileHash;
 }

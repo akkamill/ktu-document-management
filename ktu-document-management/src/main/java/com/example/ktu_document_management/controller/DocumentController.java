@@ -3,10 +3,12 @@ package com.example.ktu_document_management.controller;
 import com.example.ktu_document_management.dto.DocumentDTO;
 import com.example.ktu_document_management.entitiy.DocumentEntity;
 import com.example.ktu_document_management.service.DocumentService;
-import com.example.ktu_document_management.service.impl.FileStorageServiceImpl;
+import com.example.ktu_document_management.service.FileStorageService;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.core.io.Resource;
 import org.springframework.http.HttpHeaders;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -15,21 +17,23 @@ import org.springframework.web.multipart.MultipartFile;
 import java.io.IOException;
 import java.util.List;
 
+@Slf4j
 @RestController
 @RequestMapping("/api/v1/documents")
 @RequiredArgsConstructor
 public class DocumentController {
 
   private final DocumentService documentService;
-  private final FileStorageServiceImpl fileStorageService;
+  private final FileStorageService fileStorageService; // Use Interface, not Impl
 
   @PostMapping("/upload")
   public ResponseEntity<DocumentDTO> uploadDocument(
       @RequestParam("file") MultipartFile file,
       @RequestParam("author") String author) {
 
+    log.info("REST request to upload document: {} by {}", file.getOriginalFilename(), author);
     DocumentDTO savedDoc = documentService.uploadDocument(file, author);
-    return ResponseEntity.ok(savedDoc);
+    return new ResponseEntity<>(savedDoc, HttpStatus.CREATED);
   }
 
   @GetMapping("/search")
@@ -38,11 +42,14 @@ public class DocumentController {
       @RequestParam(required = false) String type,
       @RequestParam(required = false) String author) {
 
+    log.info("REST request to search documents with criteria - Name: {}, Type: {}, Author: {}", name, type, author);
     return ResponseEntity.ok(documentService.searchDocuments(name, type, author));
   }
 
   @GetMapping("/{id}/download")
   public ResponseEntity<Resource> downloadDocument(@PathVariable String id) {
+    log.info("REST request to download document ID: {}", id);
+
     DocumentEntity doc = documentService.getDocumentById(id);
     Resource resource = fileStorageService.loadFileAsResource(doc.getStoragePath());
 
@@ -54,6 +61,8 @@ public class DocumentController {
 
   @GetMapping("/report")
   public ResponseEntity<byte[]> generateReport() throws IOException {
+    log.info("REST request to generate Excel report of all documents");
+
     byte[] excelData = documentService.generateExcelReport();
 
     return ResponseEntity.ok()
@@ -68,6 +77,7 @@ public class DocumentController {
       @RequestParam(required = false) String type,
       @RequestParam(required = false) String author) throws IOException {
 
+    log.info("REST request to export documents to ZIP with criteria - Name: {}, Type: {}, Author: {}", name, type, author);
     byte[] zipData = documentService.exportDocumentsAsZip(name, type, author);
 
     return ResponseEntity.ok()

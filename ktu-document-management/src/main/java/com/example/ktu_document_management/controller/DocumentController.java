@@ -1,6 +1,7 @@
 package com.example.ktu_document_management.controller;
 
 import com.example.ktu_document_management.dto.DocumentDTO;
+import com.example.ktu_document_management.dto.FileResponseDTO;
 import com.example.ktu_document_management.entitiy.DocumentEntity;
 import com.example.ktu_document_management.service.DocumentService;
 import com.example.ktu_document_management.service.FileStorageService;
@@ -46,19 +47,6 @@ public class DocumentController {
     return ResponseEntity.ok(documentService.searchDocuments(name, type, author));
   }
 
-  @GetMapping("/{id}/download")
-  public ResponseEntity<Resource> downloadDocument(@PathVariable String id) {
-    log.info("REST request to download document ID: {}", id);
-
-    DocumentEntity doc = documentService.getDocumentById(id);
-    Resource resource = fileStorageService.loadFileAsResource(doc.getStoragePath());
-
-    return ResponseEntity.ok()
-        .contentType(MediaType.APPLICATION_OCTET_STREAM)
-        .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=\"" + doc.getName() + "\"")
-        .body(resource);
-  }
-
   @GetMapping("/report")
   public ResponseEntity<byte[]> generateReport() throws IOException {
     log.info("REST request to generate Excel report of all documents");
@@ -71,18 +59,27 @@ public class DocumentController {
         .body(excelData);
   }
 
+  @GetMapping("/{id}/download")
+  public ResponseEntity<byte[]> downloadDocument(@PathVariable String id) {
+    FileResponseDTO fileResponse = documentService.downloadDocument(id);
+
+    return ResponseEntity.ok()
+        .contentType(MediaType.APPLICATION_OCTET_STREAM)
+        .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=\"" + fileResponse.getFilename() + "\"")
+        .body(fileResponse.getData());
+  }
+
   @GetMapping("/export-zip")
   public ResponseEntity<byte[]> exportDocumentsAsZip(
       @RequestParam(required = false) String name,
       @RequestParam(required = false) String type,
       @RequestParam(required = false) String author) throws IOException {
 
-    log.info("REST request to export documents to ZIP with criteria - Name: {}, Type: {}, Author: {}", name, type, author);
-    byte[] zipData = documentService.exportDocumentsAsZip(name, type, author);
+    FileResponseDTO zipResponse = documentService.exportDocumentsAsZip(name, type, author);
 
     return ResponseEntity.ok()
         .contentType(MediaType.parseMediaType("application/zip"))
-        .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=\"document_export.zip\"")
-        .body(zipData);
+        .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=\"" + zipResponse.getFilename() + "\"")
+        .body(zipResponse.getData());
   }
 }

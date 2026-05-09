@@ -1,6 +1,7 @@
 package com.example.ktu_document_management.service.impl;
 
 import com.example.ktu_document_management.dto.DocumentDTO;
+import com.example.ktu_document_management.dto.FileResponseDTO;
 import com.example.ktu_document_management.entitiy.DocumentEntity;
 import com.example.ktu_document_management.exception.DocumentNotFoundException;
 import com.example.ktu_document_management.exception.DuplicateDocumentException;
@@ -19,6 +20,7 @@ import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.security.MessageDigest;
 import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
 import java.util.Arrays;
 import java.util.HexFormat;
 import java.util.List;
@@ -42,10 +44,10 @@ public class DocumentServiceImpl implements DocumentService {
     try {
       log.info("Initiating document upload for file: '{}' by author: '{}'", file.getOriginalFilename(), author);
 
-      // 1. Cryptographic Duplicate Detection (SHA-256)
+      // Cryptographic Duplicate Detection (SHA-256)
       MessageDigest digest = MessageDigest.getInstance("SHA-256");
       byte[] hashBytes = digest.digest(file.getBytes());
-      // Using Java 17+ HexFormat (Better than older DatatypeConverter)
+
       String fileHash = HexFormat.of().formatHex(hashBytes).toUpperCase();
 
       if (documentRepository.existsByFileHash(fileHash)) {
@@ -53,7 +55,7 @@ public class DocumentServiceImpl implements DocumentService {
         throw new DuplicateDocumentException("A document with this exact content already exists in the system.");
       }
 
-      // 2. File Type Validation
+      // File Type Validation
       String originalName = file.getOriginalFilename();
       String extension = originalName != null ? originalName.substring(originalName.lastIndexOf(".") + 1).toLowerCase() : "";
 
@@ -62,7 +64,7 @@ public class DocumentServiceImpl implements DocumentService {
         throw new IllegalArgumentException("Invalid file type. Only PDF, DOCX, and XLSX are allowed.");
       }
 
-      // 3. Storage and Database Save
+      // Storage and Database Save
       log.debug("Validation passed. Storing file binary...");
       String storedFileName = fileStorageService.storeFile(file);
 
@@ -147,34 +149,69 @@ public class DocumentServiceImpl implements DocumentService {
   }
 
   @Override
-  public byte[] exportDocumentsAsZip(String name, String type, String author) throws IOException {
-    log.info("Initiating ZIP export for documents matching filters -> name: '{}', type: '{}', author: '{}'", name, type, author);
+  public FileResponseDTO downloadDocument(String id) {
+    log.info("Processing service request to download document ID: {}", id);
+    DocumentEntity doc = getDocumentById(id);
+    Resource resource = fileStorageService.loadFileAsResource(doc.getStoragePath());
+
+    // Requirement: Add datetime to single download
+    String timestampedName = formatFilenameWithTimestamp(doc.getName(), "");
+
+    try {
+      return FileResponseDTO.builder()
+          .data(resource.getContentAsByteArray())
+          .filename(timestampedName)
+          .build();
+    } catch (IOException e) {
+      log.error("Failed to read file content for ID: {}", id, e);
+      throw new RuntimeException("Could not read file data");
+    }
+  }
+
+  @Override
+  public FileResponseDTO exportDocumentsAsZip(String name, String type, String author) throws IOException {
+    log.info("Processing service request for ZIP export with datetime stamp");
+
     List<DocumentEntity> documents = documentRepository.searchDocuments(name, type, author);
 
     if (documents.isEmpty()) {
-      log.warn("ZIP export requested, but no documents matched the filter criteria.");
+      log.warn("No documents found for ZIP export criteria");
+      throw new DocumentNotFoundException("No documents found to export.");
     }
+
+    // Requirement: Use name of first doc + datetime for the ZIP
+    String firstDocName = documents.get(0).getName();
+    // We treat the ZIP as the new extension
+    String zipFilename = formatFilenameWithTimestamp(firstDocName, "").replaceFirst("\\.[^.]+$", "") + ".zip";
 
     ByteArrayOutputStream baos = new ByteArrayOutputStream();
     try (ZipOutputStream zos = new ZipOutputStream(baos)) {
       for (DocumentEntity doc : documents) {
-        log.debug("Packing file '{}' into ZIP archive.", doc.getName());
         Resource resource = fileStorageService.loadFileAsResource(doc.getStoragePath());
-
-        // Create a new entry in the zip file
         ZipEntry entry = new ZipEntry(doc.getName());
         zos.putNextEntry(entry);
-
-        // Copy the file bytes into the zip
         resource.getInputStream().transferTo(zos);
         zos.closeEntry();
       }
-      log.info("ZIP archive generated successfully with {} files.", documents.size());
-    } catch (IOException e) {
-      log.error("Failed to compress documents into ZIP archive.", e);
-      throw e;
     }
-    return baos.toByteArray();
+
+    log.info("ZIP export prepared with filename: {}", zipFilename);
+    return new FileResponseDTO(baos.toByteArray(), zipFilename);
+  }
+
+  private String formatFilenameWithTimestamp(String originalName, String suffix) {
+    String timestamp = LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyyMMdd_HHmm"));
+
+    // Check if there is an extension to preserve
+    int lastDotIndex = originalName.lastIndexOf(".");
+    if (lastDotIndex == -1) {
+      return originalName + "_" + timestamp + suffix;
+    }
+
+    String baseName = originalName.substring(0, lastDotIndex);
+    String extension = originalName.substring(lastDotIndex); // includes the dot
+
+    return baseName + "_" + timestamp + extension;
   }
 
   private DocumentDTO mapToDTO(DocumentEntity entity) {

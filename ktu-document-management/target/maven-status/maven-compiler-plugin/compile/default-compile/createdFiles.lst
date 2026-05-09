@@ -1,0 +1,9 @@
+com\example\ktu_document_management\repository\DocumentRepository.class
+com\example\ktu_document_management\service\FileStorageService.class
+com\example\ktu_document_management\dto\DocumentDTO.class
+com\example\ktu_document_management\KtuDocumentManagementApplication.class
+com\example\ktu_document_management\service\DocumentService.class
+com\example\ktu_document_management\service\impl\FileStorageServiceImpl.class
+com\example\ktu_document_management\controller\DocumentController.class
+com\example\ktu_document_management\entitiy\DocumentEntity.class
+com\example\ktu_document_management\service\impl\DocumentServiceImpl.class

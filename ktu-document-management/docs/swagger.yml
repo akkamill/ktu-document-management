@@ -1,0 +1,148 @@
+openapi: 3.0.3
+info:
+  title: Document Management Service API
+  description: KTU Semester Project REST API for uploading, searching, and managing documents (PDF, DOCX, XLSX).
+  version: 1.0.0
+servers:
+  - url: http://localhost:8080
+    description: Local development server
+tags:
+  - name: Documents
+    description: Document management operations
+
+paths:
+  /api/v1/documents/upload:
+    post:
+      tags:
+        - Documents
+      summary: Upload a new document
+      description: Uploads a PDF, DOCX, or XLSX file and extracts metadata. Maximum file size is 50MB.
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              properties:
+                file:
+                  type: string
+                  format: binary
+                  description: The document file to upload.
+                author:
+                  type: string
+                  description: The name of the person uploading the document.
+              required:
+                - file
+                - author
+      responses:
+        '200':
+          description: Document successfully uploaded and metadata saved.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DocumentDTO'
+        '400':
+          description: Invalid file type or missing request parameters.
+
+  /api/v1/documents/search:
+    get:
+      tags:
+        - Documents
+      summary: Search for documents
+      description: Retrieves a list of documents matching the optional search criteria.
+      parameters:
+        - name: name
+          in: query
+          description: Partial or full name of the document file.
+          required: false
+          schema:
+            type: string
+        - name: type
+          in: query
+          description: File extension type (e.g., pdf, docx, xlsx).
+          required: false
+          schema:
+            type: string
+        - name: author
+          in: query
+          description: Partial or full name of the author.
+          required: false
+          schema:
+            type: string
+      responses:
+        '200':
+          description: A list of matching documents.
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/DocumentDTO'
+
+  /api/v1/documents/{id}/download:
+    get:
+      tags:
+        - Documents
+      summary: Download a document
+      description: Retrieves the binary stream of the stored document file by its ID.
+      parameters:
+        - name: id
+          in: path
+          description: The UUID of the document to download.
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: The document file.
+          content:
+            application/octet-stream:
+              schema:
+                type: string
+                format: binary
+        '404':
+          description: Document not found.
+
+  /api/v1/documents/report:
+    get:
+      tags:
+        - Documents
+      summary: Generate an Excel report
+      description: Generates and downloads an XLSX file containing metadata for all documents in the system.
+      responses:
+        '200':
+          description: The generated Excel report.
+          content:
+            application/vnd.openxmlformats-officedocument.spreadsheetml.sheet:
+              schema:
+                type: string
+                format: binary
+
+components:
+  schemas:
+    DocumentDTO:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+          description: The unique identifier of the document.
+          example: 123e4567-e89b-12d3-a456-426614174000
+        name:
+          type: string
+          description: The original name of the uploaded file.
+          example: Q1_Financial_Report.pdf
+        type:
+          type: string
+          description: The file extension type.
+          example: pdf
+        author:
+          type: string
+          description: The author who uploaded the document.
+          example: Jane Doe
+        uploadDate:
+          type: string
+          format: date-time
+          description: The timestamp when the document was uploaded.
+          example: 2026-05-09T14:15:22Z

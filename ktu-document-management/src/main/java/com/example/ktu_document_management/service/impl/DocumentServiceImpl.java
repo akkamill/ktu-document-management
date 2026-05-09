@@ -8,6 +8,7 @@ import com.example.ktu_document_management.service.FileStorageService;
 import lombok.RequiredArgsConstructor;
 import org.apache.poi.ss.usermodel.*;
 import org.apache.poi.xssf.usermodel.XSSFWorkbook;
+import org.springframework.core.io.Resource;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 
@@ -18,6 +19,8 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.UUID;
 import java.util.stream.Collectors;
+import java.util.zip.ZipEntry;
+import java.util.zip.ZipOutputStream;
 
 @Service
 @RequiredArgsConstructor
@@ -91,6 +94,26 @@ public class DocumentServiceImpl implements DocumentService {
       workbook.write(out);
       return out.toByteArray();
     }
+  }
+
+  public byte[] exportDocumentsAsZip(String name, String type, String author) throws IOException {
+    List<DocumentEntity> documents = documentRepository.searchDocuments(name, type, author);
+
+    ByteArrayOutputStream baos = new ByteArrayOutputStream();
+    try (ZipOutputStream zos = new ZipOutputStream(baos)) {
+      for (DocumentEntity doc : documents) {
+        Resource resource = fileStorageService.loadFileAsResource(doc.getStoragePath());
+
+        // Create a new entry in the zip file
+        ZipEntry entry = new ZipEntry(doc.getName());
+        zos.putNextEntry(entry);
+
+        // Copy the file bytes into the zip
+        resource.getInputStream().transferTo(zos);
+        zos.closeEntry();
+      }
+    }
+    return baos.toByteArray();
   }
 
   private DocumentDTO mapToDTO(DocumentEntity entity) {

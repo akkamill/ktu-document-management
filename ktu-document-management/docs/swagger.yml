@@ -1,14 +1,30 @@
 openapi: 3.0.3
 info:
   title: Document Management Service API
-  description: KTU Semester Project REST API for uploading, searching, and managing documents (PDF, DOCX, XLSX).
+  description: |
+    ### KTU Semester Project
+    A RESTful backend service for uploading, searching, and managing documents (`PDF`, `DOCX`, `XLSX`). 
+    
+    **Key Features:**
+    * Secure file uploads with metadata extraction.
+    * Cryptographic duplicate detection.
+    * Advanced search and filtering.
+    * Bulk export capabilities (ZIP & Excel).
   version: 1.0.0
+  contact:
+    name: Kamil Alakbarov
+    email: student@ktu.edu
+  license:
+    name: MIT License
+    url: https://opensource.org/licenses/MIT
+
 servers:
   - url: http://localhost:8080
-    description: Local development server
+    description: Local Development Server
+
 tags:
   - name: Documents
-    description: Document management operations
+    description: Core operations for document lifecycle management.
 
 paths:
   /api/v1/documents/upload:
@@ -16,26 +32,29 @@ paths:
       tags:
         - Documents
       summary: Upload a new document
-      description: Uploads a PDF, DOCX, or XLSX file and extracts metadata. Maximum file size is 50MB.
+      operationId: uploadDocument
+      description: |
+       - Securely uploads a `PDF`, `DOCX`, or `XLSX` file, extracts metadata, and calculates a SHA-256 hash to prevent duplicate uploads. **Max file size: 50MB.**
       requestBody:
         required: true
         content:
           multipart/form-data:
             schema:
               type: object
+              required:
+                - file
+                - author
               properties:
                 file:
                   type: string
                   format: binary
-                  description: The document file to upload.
+                  description: The document binary file.
                 author:
                   type: string
                   description: The name of the person uploading the document.
-              required:
-                - file
-                - author
+                  example: Jane Doe
       responses:
-        '200':
+        '201':
           description: Document successfully uploaded and metadata saved.
           content:
             application/json:
@@ -43,13 +62,20 @@ paths:
                 $ref: '#/components/schemas/DocumentDTO'
         '400':
           description: Invalid file type or missing request parameters.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '409':
+          description: Conflict - A document with this exact content already exists.
 
   /api/v1/documents/search:
     get:
       tags:
         - Documents
-      summary: Search for documents
-      description: Retrieves a list of documents matching the optional search criteria.
+      summary: Search and filter documents
+      operationId: searchDocuments
+      description: Retrieves a list of documents matching the optional search criteria. Returns all documents if no parameters are provided.
       parameters:
         - name: name
           in: query
@@ -57,18 +83,21 @@ paths:
           required: false
           schema:
             type: string
+            example: Report
         - name: type
           in: query
-          description: File extension type (e.g., pdf, docx, xlsx).
+          description: File extension type (e.g., `pdf`, `docx`, `xlsx`).
           required: false
           schema:
             type: string
+            example: pdf
         - name: author
           in: query
           description: Partial or full name of the author.
           required: false
           schema:
             type: string
+            example: Jane Doe
       responses:
         '200':
           description: A list of matching documents.
@@ -83,8 +112,9 @@ paths:
     get:
       tags:
         - Documents
-      summary: Download a document
-      description: Retrieves the binary stream of the stored document file by its ID.
+      summary: Download a specific document
+      operationId: downloadDocument
+      description: Retrieves the binary stream of a stored document file using its unique identifier.
       parameters:
         - name: id
           in: path
@@ -93,23 +123,29 @@ paths:
           schema:
             type: string
             format: uuid
+            example: 123e4567-e89b-12d3-a456-426614174000
       responses:
         '200':
-          description: The document file.
+          description: The document file stream.
           content:
             application/octet-stream:
               schema:
                 type: string
                 format: binary
         '404':
-          description: Document not found.
+          description: Document not found in the system.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
 
   /api/v1/documents/report:
     get:
       tags:
         - Documents
-      summary: Generate an Excel report
-      description: Generates and downloads an XLSX file containing metadata for all documents in the system.
+      summary: Generate an Excel inventory report
+      operationId: generateReport
+      description: Generates and downloads an `.xlsx` file containing the metadata for all documents currently in the system.
       responses:
         '200':
           description: The generated Excel report.
@@ -123,8 +159,9 @@ paths:
     get:
       tags:
         - Documents
-      summary: Export search results as a ZIP file
-      description: Generates and downloads a ZIP archive containing all document binaries that match the provided search criteria.
+      summary: Export search results as a ZIP archive
+      operationId: exportZip
+      description: Compresses all document binaries that match the provided search criteria into a single `.zip` file for easy downloading.
       parameters:
         - name: name
           in: query
@@ -134,7 +171,7 @@ paths:
             type: string
         - name: type
           in: query
-          description: File extension type (e.g., pdf, docx, xlsx).
+          description: File extension type.
           required: false
           schema:
             type: string
@@ -159,6 +196,7 @@ components:
   schemas:
     DocumentDTO:
       type: object
+      description: Data Transfer Object representing document metadata.
       properties:
         id:
           type: string
@@ -182,3 +220,21 @@ components:
           format: date-time
           description: The timestamp when the document was uploaded.
           example: 2026-05-09T14:15:22Z
+
+    ErrorResponse:
+      type: object
+      description: Standardized error response format.
+      properties:
+        timestamp:
+          type: string
+          format: date-time
+          example: 2026-05-09T14:15:22Z
+        status:
+          type: integer
+          example: 400
+        error:
+          type: string
+          example: Bad Request
+        message:
+          type: string
+          example: Invalid file type. Only PDF, DOCX, and XLSX are allowed.

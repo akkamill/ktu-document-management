@@ -7,14 +7,14 @@ spring:
     password: ${SPRING_DATASOURCE_PASSWORD:dms123}
   jpa:
     hibernate:
-      ddl-auto: update
+      ddl-auto: validate
     show-sql: true
   servlet:
     multipart:
       max-file-size: 50MB
       max-request-size: 50MB
-#  liquibase:
-#    change-log: classpath:/db/changelog/db.changelog-master.yaml
+  liquibase:
+    change-log: classpath:/db/changelog/db.changelog-master.yaml
 
 app:
   storage:

@@ -1,1 +1,5 @@
 com\example\ktu_document_management\KtuDocumentManagementApplicationTests.class
+com\example\ktu_document_management\controller\DocumentControllerTest.class
+com\example\ktu_document_management\it\DocumentITest.class
+com\example\ktu_document_management\service\DocumentServiceImplTest.class
+com\example\ktu_document_management\service\FileStorageServiceImplTest.class

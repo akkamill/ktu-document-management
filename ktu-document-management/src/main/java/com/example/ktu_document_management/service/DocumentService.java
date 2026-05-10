@@ -2,6 +2,7 @@ package com.example.ktu_document_management.service;
 
 import com.example.ktu_document_management.dto.DocumentDTO;
 import com.example.ktu_document_management.dto.FileResponseDTO;
+import com.example.ktu_document_management.entitiy.DocumentEntity;
 import org.springframework.web.multipart.MultipartFile;
 import java.io.IOException;
 import java.util.List;
@@ -45,6 +46,18 @@ public interface DocumentService {
    * @throws com.example.ktu_document_management.exception.DocumentNotFoundException if the ID does not exist.
    */
   FileResponseDTO downloadDocument(String id);
+
+  /**
+   * Internal helper method to retrieve a raw {@link DocumentEntity} from the database.
+   * Parses the provided String ID into a UUID and executes a database lookup.
+   * This method is utilized internally by the service layer for operations that require
+   * physical file retrieval or entity modification.
+   *
+   * @param id The String representation of the document's UUID.
+   * @return The located {@link DocumentEntity}.
+   * @throws com.example.ktu_document_management.exception.DocumentNotFoundException if the ID format is invalid or no matching record exists in the database.
+   */
+  DocumentEntity getDocumentById(String id);
 
   /**
    * Generates a ZIP archive containing all documents that match the search criteria.

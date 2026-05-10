@@ -45,6 +45,10 @@ public class FileStorageServiceImpl implements FileStorageService {
 
   @Override
   public String storeFile(MultipartFile file) {
+    if (file.isEmpty()) {
+      throw new IllegalArgumentException("Cannot store empty file.");
+    }
+
     String originalFileName = file.getOriginalFilename();
     String fileExtension = "";
 

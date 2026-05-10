@@ -29,6 +29,13 @@ import java.util.stream.Collectors;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipOutputStream;
 
+/**
+ * Primary implementation of the {@link DocumentService} interface.
+ * Handles business logic including SHA-256 duplicate detection, Apache POI Excel generation,
+ * and zip archiving. Interacts with PostgreSQL via {@link DocumentRepository} for metadata persistence.
+ * * @author Kamil Alakbarov
+ * @version 1.0
+ */
 @Slf4j
 @Service
 @RequiredArgsConstructor

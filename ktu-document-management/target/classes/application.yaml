@@ -1,0 +1,41 @@
+spring:
+  application:
+    name: ktu-document-management
+  datasource:
+    url: ${SPRING_DATASOURCE_URL:jdbc:postgresql://localhost:5432/dms_db}
+    username: ${SPRING_DATASOURCE_USERNAME:postgres}
+    password: ${SPRING_DATASOURCE_PASSWORD:dms123}
+  jpa:
+    hibernate:
+      ddl-auto: validate
+    show-sql: true
+  servlet:
+    multipart:
+      max-file-size: 50MB
+      max-request-size: 50MB
+  liquibase:
+    change-log: classpath:/db/changelog/db.changelog-master.yaml
+
+app:
+  storage:
+    upload-dir: ./uploads
+
+logging:
+  level:
+    root: INFO
+    com.example.ktu_document_management: DEBUG # Shows your custom log.debug() messages
+    org.springframework.web: INFO
+    org.hibernate.SQL: DEBUG # Shows the actual SQL queries being run
+  file:
+    name: logs/dms-application.log
+  logback:
+    rollingpolicy:
+      max-file-size: 10MB
+      max-history: 7
+
+springdoc:
+  api-docs:
+    enabled: true
+  swagger-ui:
+    url: /openapi.yaml
+    disable-swagger-default-url: true

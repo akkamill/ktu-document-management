@@ -44,6 +44,6 @@ public class DocumentEntity {
   /** * The SHA-256 cryptographic hash of the file's binary content.
    * Enforced as unique at the database level to prevent duplicate file uploads.
    */
-  @Column(name = "file_hash", unique = true, columnDefinition = "TEXT")
+  @Column(name = "file_hash", unique = true)
   private String fileHash;
 }

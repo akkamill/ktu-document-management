@@ -13,6 +13,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.apache.poi.ss.usermodel.*;
 import org.apache.poi.xssf.usermodel.XSSFWorkbook;
 import org.springframework.core.io.Resource;
+import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 
@@ -28,6 +29,10 @@ import java.util.UUID;
 import java.util.stream.Collectors;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipOutputStream;
+
+import static com.example.ktu_document_management.config.DocumentSpecifications.hasAuthor;
+import static com.example.ktu_document_management.config.DocumentSpecifications.hasName;
+import static com.example.ktu_document_management.config.DocumentSpecifications.hasType;
 
 /**
  * Primary implementation of the {@link DocumentService} interface.
@@ -51,6 +56,15 @@ public class DocumentServiceImpl implements DocumentService {
     try {
       log.info("Initiating document upload for file: '{}' by author: '{}'", file.getOriginalFilename(), author);
 
+      // File Type Validation
+      String originalName = file.getOriginalFilename();
+      String extension = originalName != null ? originalName.substring(originalName.lastIndexOf(".") + 1).toLowerCase() : "";
+
+      if (!ALLOWED_EXTENSIONS.contains(extension)) {
+        log.warn("Upload rejected. Unsupported file extension: '{}'", extension);
+        throw new IllegalArgumentException("Unsupported file type. Only PDF, DOCX, and XLSX are allowed.");
+      }
+
       // Cryptographic Duplicate Detection (SHA-256)
       MessageDigest digest = MessageDigest.getInstance("SHA-256");
       byte[] hashBytes = digest.digest(file.getBytes());
@@ -59,17 +73,10 @@ public class DocumentServiceImpl implements DocumentService {
 
       if (documentRepository.existsByFileHash(fileHash)) {
         log.warn("Duplicate upload blocked. A document with hash {} already exists.", fileHash);
-        throw new DuplicateDocumentException("A document with this exact content already exists in the system.");
+        throw new DuplicateDocumentException("A document with this exact content already exists.");
       }
 
-      // File Type Validation
-      String originalName = file.getOriginalFilename();
-      String extension = originalName != null ? originalName.substring(originalName.lastIndexOf(".") + 1).toLowerCase() : "";
 
-      if (!ALLOWED_EXTENSIONS.contains(extension)) {
-        log.warn("Upload rejected. Unsupported file extension: '{}'", extension);
-        throw new IllegalArgumentException("Invalid file type. Only PDF, DOCX, and XLSX are allowed.");
-      }
 
       // Storage and Database Save
       log.debug("Validation passed. Storing file binary...");
@@ -99,9 +106,14 @@ public class DocumentServiceImpl implements DocumentService {
 
   @Override
   public List<DocumentDTO> searchDocuments(String name, String type, String author) {
-    log.info("Searching documents with filters -> name: '{}', type: '{}', author: '{}'", name, type, author);
+    log.info("Searching documents with filters -> name: '{}', type: '{}', author: '{}'", name, type,
+        author);
+    Specification<DocumentEntity> spec = Specification
+        .where(hasName(name))
+        .and(hasType(type))
+        .and(hasAuthor(author));
 
-    List<DocumentEntity> results = documentRepository.searchDocuments(name, type, author);
+    List<DocumentEntity> results = documentRepository.findAll(spec);
 
     log.debug("Search query returned {} results.", results.size());
     return results.stream()
@@ -179,16 +191,19 @@ public class DocumentServiceImpl implements DocumentService {
   public FileResponseDTO exportDocumentsAsZip(String name, String type, String author) throws IOException {
     log.info("Processing service request for ZIP export with datetime stamp");
 
-    List<DocumentEntity> documents = documentRepository.searchDocuments(name, type, author);
+    Specification<DocumentEntity> spec = Specification
+        .where(hasName(name))
+        .and(hasType(type))
+        .and(hasAuthor(author));
+
+    List<DocumentEntity> documents = documentRepository.findAll(spec);
 
     if (documents.isEmpty()) {
       log.warn("No documents found for ZIP export criteria");
       throw new DocumentNotFoundException("No documents found to export.");
     }
 
-    // Requirement: Use name of first doc + datetime for the ZIP
-    String firstDocName = documents.get(0).getName();
-    // We treat the ZIP as the new extension
+    String firstDocName = documents.getFirst().getName();
     String zipFilename = formatFilenameWithTimestamp(firstDocName, "").replaceFirst("\\.[^.]+$", "") + ".zip";
 
     ByteArrayOutputStream baos = new ByteArrayOutputStream();

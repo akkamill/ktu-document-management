@@ -17,6 +17,13 @@ import java.nio.file.Paths;
 import java.nio.file.StandardCopyOption;
 import java.util.UUID;
 
+/**
+ * Implementation of the {@link FileStorageService} interface.
+ * Manages the physical reading and writing of binary files to the server's local file system.
+ * Uses a configurable upload directory defined in the application properties.
+ * * @author Kamil Alakbarov
+ * @version 1.0
+ */
 @Slf4j
 @Service
 public class FileStorageServiceImpl implements FileStorageService {
@@ -38,6 +45,10 @@ public class FileStorageServiceImpl implements FileStorageService {
 
   @Override
   public String storeFile(MultipartFile file) {
+    if (file.isEmpty()) {
+      throw new IllegalArgumentException("Cannot store empty file.");
+    }
+
     String originalFileName = file.getOriginalFilename();
     String fileExtension = "";
 

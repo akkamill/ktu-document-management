@@ -7,18 +7,28 @@ import lombok.NoArgsConstructor;
 
 import java.time.LocalDateTime;
 
-  @Data
-  @Builder
-  @AllArgsConstructor
-  @NoArgsConstructor
-  public class ErrorResponse {
+/**
+ * Data Transfer Object representing a standardized HTTP error response.
+ * Sent to the client by the GlobalExceptionHandler to provide consistent and safe
+ * error structures without exposing internal server stack traces.
+ * * @author Kamil Alakbarov
+ * @version 1.0
+ */
+@Data
+@Builder
+@AllArgsConstructor
+@NoArgsConstructor
+public class ErrorResponse {
 
-    private LocalDateTime timestamp;
+  /** The exact date and time when the error occurred. */
+  private LocalDateTime timestamp;
 
-    private int status;
+  /** The HTTP status code (e.g., 400, 404, 500). */
+  private int status;
 
-    private String error;
+  /** The brief HTTP error type (e.g., "Bad Request", "Internal Server Error"). */
+  private String error;
 
-    private String message;
-
-  }
+  /** A descriptive, user-friendly message explaining the cause of the error. */
+  private String message;
+}

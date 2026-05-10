@@ -2,8 +2,10 @@ com\example\ktu_document_management\repository\DocumentRepository.class
 com\example\ktu_document_management\service\FileStorageService.class
 com\example\ktu_document_management\dto\DocumentDTO.class
 com\example\ktu_document_management\dto\FileResponseDTO$FileResponseDTOBuilder.class
+com\example\ktu_document_management\config\WebMvcConfig.class
 com\example\ktu_document_management\controller\DocumentController.class
 com\example\ktu_document_management\exception\DocumentNotFoundException.class
+com\example\ktu_document_management\config\DocumentSpecifications.class
 com\example\ktu_document_management\service\impl\DocumentServiceImpl.class
 com\example\ktu_document_management\exception\DuplicateDocumentException.class
 com\example\ktu_document_management\dto\ErrorResponse.class

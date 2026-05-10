@@ -1,0 +1,161 @@
+{
+  "info": {
+    "_postman_id": "a1b2c3d4-e5f6-7890-1234-56789abcdef0",
+    "name": "KTU Document Management Service",
+    "description": "API collection for the Spring Boot Document Management Service. Features include uploading with SHA-256 hashing, searching, downloading, and bulk ZIP exporting.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "item": [
+    {
+      "name": "1. Upload Document",
+      "request": {
+        "method": "POST",
+        "header": [],
+        "body": {
+          "mode": "formdata",
+          "formdata": [
+            {
+              "key": "file",
+              "type": "file",
+              "description": "Select a PDF, DOCX, or XLSX file from your computer.",
+              "src": []
+            },
+            {
+              "key": "author",
+              "value": "Jane Doe",
+              "type": "text",
+              "description": "The name of the user uploading the document."
+            }
+          ]
+        },
+        "url": {
+          "raw": "{{baseUrl}}/api/v1/documents/upload",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "api",
+            "v1",
+            "documents",
+            "upload"
+          ]
+        },
+        "description": "Uploads a new document. Will fail if a document with the exact same content (SHA-256 hash) already exists."
+      },
+      "response": []
+    },
+    {
+      "name": "2. Search Documents",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "{{baseUrl}}/api/v1/documents/search?author=Jane Doe",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "api",
+            "v1",
+            "documents",
+            "search"
+          ],
+          "query": [
+            {
+              "key": "name",
+              "value": "Report",
+              "description": "Partial or full file name",
+              "disabled": true
+            },
+            {
+              "key": "type",
+              "value": "pdf",
+              "description": "File extension (e.g., pdf, docx)",
+              "disabled": true
+            },
+            {
+              "key": "author",
+              "value": "Jane Doe",
+              "description": "Name of the author"
+            }
+          ]
+        },
+        "description": "Retrieves a list of documents matching the optional filters. You can enable/disable query parameters in the Postman 'Params' tab."
+      },
+      "response": []
+    },
+    {
+      "name": "3. Download Document",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "{{baseUrl}}/api/v1/documents/:id/download",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "api",
+            "v1",
+            "documents",
+            ":id",
+            "download"
+          ],
+          "variable": [
+            {
+              "key": "id",
+              "value": "paste-your-document-uuid-here",
+              "description": "The UUID of the document, obtained from the Search or Upload endpoints."
+            }
+          ]
+        },
+        "description": "Downloads the binary stream of a specific document."
+      },
+      "response": []
+    },
+    {
+      "name": "4. Export Search as ZIP",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "{{baseUrl}}/api/v1/documents/export-zip?author=Jane Doe",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "api",
+            "v1",
+            "documents",
+            "export-zip"
+          ],
+          "query": [
+            {
+              "key": "name",
+              "value": "",
+              "disabled": true
+            },
+            {
+              "key": "type",
+              "value": "",
+              "disabled": true
+            },
+            {
+              "key": "author",
+              "value": "Jane Doe"
+            }
+          ]
+        },
+        "description": "Packages all documents matching the search criteria into a single downloadable .zip file.\n\n**Note for Postman:** To actually save the file to your computer, click the small arrow next to the blue 'Send' button and select **'Send and Download'**."
+      },
+      "response": []
+    }
+  ],
+  "variable": [
+    {
+      "key": "baseUrl",
+      "value": "http://localhost:8080",
+      "type": "string"
+    }
+  ]
+}

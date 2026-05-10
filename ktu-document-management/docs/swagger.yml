@@ -1,0 +1,240 @@
+openapi: 3.0.3
+info:
+  title: Document Management Service API
+  description: |
+    ### KTU Semester Project
+    A RESTful backend service for uploading, searching, and managing documents (`PDF`, `DOCX`, `XLSX`). 
+    
+    **Key Features:**
+    * Secure file uploads with metadata extraction.
+    * Cryptographic duplicate detection.
+    * Advanced search and filtering.
+    * Bulk export capabilities (ZIP & Excel).
+  version: 1.0.0
+  contact:
+    name: Kamil Alakbarov
+    email: student@ktu.edu
+  license:
+    name: MIT License
+    url: https://opensource.org/licenses/MIT
+
+servers:
+  - url: http://localhost:8080
+    description: Local Development Server
+
+tags:
+  - name: Documents
+    description: Core operations for document lifecycle management.
+
+paths:
+  /api/v1/documents/upload:
+    post:
+      tags:
+        - Documents
+      summary: Upload a new document
+      operationId: uploadDocument
+      description: |
+       - Securely uploads a `PDF`, `DOCX`, or `XLSX` file, extracts metadata, and calculates a SHA-256 hash to prevent duplicate uploads. **Max file size: 50MB.**
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              required:
+                - file
+                - author
+              properties:
+                file:
+                  type: string
+                  format: binary
+                  description: The document binary file.
+                author:
+                  type: string
+                  description: The name of the person uploading the document.
+                  example: Jane Doe
+      responses:
+        '201':
+          description: Document successfully uploaded and metadata saved.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DocumentDTO'
+        '400':
+          description: Invalid file type or missing request parameters.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '409':
+          description: Conflict - A document with this exact content already exists.
+
+  /api/v1/documents/search:
+    get:
+      tags:
+        - Documents
+      summary: Search and filter documents
+      operationId: searchDocuments
+      description: Retrieves a list of documents matching the optional search criteria. Returns all documents if no parameters are provided.
+      parameters:
+        - name: name
+          in: query
+          description: Partial or full name of the document file.
+          required: false
+          schema:
+            type: string
+            example: Report
+        - name: type
+          in: query
+          description: File extension type (e.g., `pdf`, `docx`, `xlsx`).
+          required: false
+          schema:
+            type: string
+            example: pdf
+        - name: author
+          in: query
+          description: Partial or full name of the author.
+          required: false
+          schema:
+            type: string
+            example: Jane Doe
+      responses:
+        '200':
+          description: A list of matching documents.
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/DocumentDTO'
+
+  /api/v1/documents/{id}/download:
+    get:
+      tags:
+        - Documents
+      summary: Download a specific document
+      operationId: downloadDocument
+      description: Retrieves the binary stream of a stored document file using its unique identifier.
+      parameters:
+        - name: id
+          in: path
+          description: The UUID of the document to download.
+          required: true
+          schema:
+            type: string
+            format: uuid
+            example: 123e4567-e89b-12d3-a456-426614174000
+      responses:
+        '200':
+          description: The document file stream.
+          content:
+            application/octet-stream:
+              schema:
+                type: string
+                format: binary
+        '404':
+          description: Document not found in the system.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /api/v1/documents/report:
+    get:
+      tags:
+        - Documents
+      summary: Generate an Excel inventory report
+      operationId: generateReport
+      description: Generates and downloads an `.xlsx` file containing the metadata for all documents currently in the system.
+      responses:
+        '200':
+          description: The generated Excel report.
+          content:
+            application/vnd.openxmlformats-officedocument.spreadsheetml.sheet:
+              schema:
+                type: string
+                format: binary
+
+  /api/v1/documents/export-zip:
+    get:
+      tags:
+        - Documents
+      summary: Export search results as a ZIP archive
+      operationId: exportZip
+      description: Compresses all document binaries that match the provided search criteria into a single `.zip` file for easy downloading.
+      parameters:
+        - name: name
+          in: query
+          description: Partial or full name of the document file.
+          required: false
+          schema:
+            type: string
+        - name: type
+          in: query
+          description: File extension type.
+          required: false
+          schema:
+            type: string
+        - name: author
+          in: query
+          description: Partial or full name of the author.
+          required: false
+          schema:
+            type: string
+      responses:
+        '200':
+          description: A generated ZIP file containing the requested documents.
+          content:
+            application/zip:
+              schema:
+                type: string
+                format: binary
+        '500':
+          description: Internal server error during ZIP generation.
+
+components:
+  schemas:
+    DocumentDTO:
+      type: object
+      description: Data Transfer Object representing document metadata.
+      properties:
+        id:
+          type: string
+          format: uuid
+          description: The unique identifier of the document.
+          example: 123e4567-e89b-12d3-a456-426614174000
+        name:
+          type: string
+          description: The original name of the uploaded file.
+          example: Q1_Financial_Report.pdf
+        type:
+          type: string
+          description: The file extension type.
+          example: pdf
+        author:
+          type: string
+          description: The author who uploaded the document.
+          example: Jane Doe
+        uploadDate:
+          type: string
+          format: date-time
+          description: The timestamp when the document was uploaded.
+          example: 2026-05-09T14:15:22Z
+
+    ErrorResponse:
+      type: object
+      description: Standardized error response format.
+      properties:
+        timestamp:
+          type: string
+          format: date-time
+          example: 2026-05-09T14:15:22Z
+        status:
+          type: integer
+          example: 400
+        error:
+          type: string
+          example: Bad Request
+        message:
+          type: string
+          example: Invalid file type. Only PDF, DOCX, and XLSX are allowed.
